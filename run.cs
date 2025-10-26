@@ -222,6 +222,7 @@ public class Program
                     continue;
                 visited[newState] = newCost;
                 var priority = newCost + Heuristic(newHall, newRooms);
+                
                 pq.Enqueue((newHall, newRooms, newCost), (priority, counter++));
             }
         }
