@@ -7,7 +7,7 @@ namespace run;
 
 public static class Program
 {
-    private static readonly Dictionary<char, int> EnergyCost = new() 
+    private static readonly Dictionary<char, int> EnergyCost = new()
     {
         { 'A', 1 }, { 'B', 10 }, { 'C', 100 }, { 'D', 1000 }
     };
@@ -19,19 +19,18 @@ public static class Program
 
     private static readonly List<int> RoomPos = [2, 4, 6, 8];
     private static readonly List<int> ValidHallwayStops = [0, 1, 3, 5, 7, 9, 10];
+    private const string Enemies = "ABCD";
 
-    
     public static void Main()
     {
         var lines = new List<string>();
-            
-        while (Console.ReadLine() is { } line && !string.IsNullOrWhiteSpace(line)) 
+        while (Console.ReadLine() is { } line && !string.IsNullOrWhiteSpace(line))
             lines.Add(line);
-            
-        var roomDepth = lines.Count - 3;
+        
+        var depth = lines.Count - 3;
         var hall = new string('.', 11);
         var rooms = new List<string> { "", "", "", "" };
-            
+
         for (var i = lines.Count - 2; i > 1; i--)
         {
             var roomLine = lines[i];
@@ -41,38 +40,39 @@ public static class Program
             if (roomLine.Length > 9 && char.IsLetter(roomLine[9])) rooms[3] += roomLine[9];
         }
 
-        var initState = new State(hall, rooms, roomDepth);
-
-        var result = Solve(initState);
+        var initialState = new State(hall, rooms, depth);
+        var result = Solve(initialState);
         Console.WriteLine(result);
     }
 
     private static int Solve(State initialState)
     {
-        var priorityQueue = new PriorityQueue<State, int>();
-        var costs = new Dictionary<State, int> { [initialState] = 0 };
+        var priorityQueue = new PriorityQueue<(State state, int cost), int>();
+        var visited = new Dictionary<State, int> { [initialState] = 0 };
 
-        priorityQueue.Enqueue(initialState, CalculateHeuristic(initialState));
+        priorityQueue.Enqueue((initialState, 0), CalculateHeuristic(initialState));
 
-        while (priorityQueue.Count > 0)
+        while (priorityQueue.TryDequeue(out var item, out _))
         {
-            var curState = priorityQueue.Dequeue();
-            var curCost = costs[curState];
+            var (curState, curCost) = item;
+
+            if (visited[curState] < curCost)
+                continue;
+            
 
             if (curState.IsFinal())
                 return curCost;
-                
-            if (costs.TryGetValue(curState, out var knownCost) && curCost > knownCost)
-                continue;
-                
+            
+
             foreach (var (nextState, moveCost) in GetNextStates(curState))
             {
                 var newCost = curCost + moveCost;
 
-                if (costs.TryGetValue(nextState, out int value) && newCost >= value) 
+                if (visited.TryGetValue(nextState, out var val) && newCost >= val) 
                     continue;
-                costs[nextState] = newCost;
-                priorityQueue.Enqueue(nextState, newCost + CalculateHeuristic(nextState));
+                val = newCost;
+                visited[nextState] = val;
+                priorityQueue.Enqueue((nextState, newCost), newCost + CalculateHeuristic(nextState));
             }
         }
 
@@ -81,91 +81,55 @@ public static class Program
 
     private static int CalculateHeuristic(State state)
     {
-        var heuristic = 0;
+        var total = 0;
+
         for (var i = 0; i < state.Hallway.Length; i++)
         {
             var enemy = state.Hallway[i];
             if (enemy == '.') 
                 continue;
             
-            var pos = RoomPos[RoomsIdx[enemy]];
-            var dist = Math.Abs(i - pos);
-            heuristic += dist * EnergyCost[enemy];
+            var targetPos = RoomPos[RoomsIdx[enemy]];
+            var distance = Math.Abs(i - targetPos);
+            total += distance * EnergyCost[enemy];
         }
-            
-        for (var i = 0; i < 4; i++)
+
+        for (var roomIdx = 0; roomIdx < 4; roomIdx++)
         {
-            var room = state.Rooms[i];
-            var type = "ABCD"[i];
+            var room = state.Rooms[roomIdx];
+            var type = GetType(roomIdx);
             for (var depth = 0; depth < room.Length; depth++)
             {
                 var enemy = room[depth];
-                if (RoomsIdx[enemy] == i && room[depth..].All(c => c == type))
+                if (enemy == type) 
                     continue;
-
+                
                 var stepsToExit = room.Length - depth;
-                var target = RoomPos[RoomsIdx[enemy]];
-                var dist = stepsToExit + Math.Abs(RoomPos[i] - target);
-                heuristic += dist * EnergyCost[enemy];
+                var targetPos = RoomPos[RoomsIdx[enemy]];
+                var distance = Math.Abs(RoomPos[roomIdx] - targetPos);
+                total += (stepsToExit + distance) * EnergyCost[enemy];
             }
         }
-        return heuristic;
+        return total;
     }
 
     private static IEnumerable<(State newState, int cost)> GetNextStates(State state)
     {
-        for (var roomIdx = 0; roomIdx < 4; roomIdx++)
-        {
-            var room = state.Rooms[roomIdx];
-            if (room.Length == 0) 
-                continue;
-
-            var type = "ABCD"[roomIdx];
-            if (room.All(c => c == type)) 
-                continue;
-                
-            var enemy = room[^1];
-            var entryPos = RoomPos[roomIdx];
-
-            foreach (var hallPos in ValidHallwayStops)
-            {
-                var (start, end) = (Math.Min(entryPos, hallPos), Math.Max(entryPos, hallPos));
-                var isClear = true;
-                for (var i = start; i <= end; i++)
-                {
-                    if (i == entryPos || state.Hallway[i] == '.') 
-                        continue;
-                    isClear = false;
-                    break;
-                }
-
-                if (!isClear) continue;
-                    
-                var stepsToExit = state.RoomDepth - room.Length + 1;
-                var steps = Math.Abs(hallPos - entryPos);
-                var moveCost = (stepsToExit + steps) * EnergyCost[enemy];
-                        
-                var hall = new StringBuilder(state.Hallway) { [hallPos] = enemy };
-                var rooms = state.Rooms.ToList();
-                rooms[roomIdx] = room[..^1];
-
-                yield return (new State(hall.ToString(), rooms, state.RoomDepth), moveCost);
-            }
-        }
-        
         for (var hallIdx = 0; hallIdx < state.Hallway.Length; hallIdx++)
         {
             var enemy = state.Hallway[hallIdx];
             if (enemy == '.') 
                 continue;
 
-            var target = RoomsIdx[enemy];
-            var targetType = "ABCD"[target];
-            if (state.Rooms[target].Any(c => c != targetType)) 
+            var targetRoomIdx = RoomsIdx[enemy];
+            var targetRoom = state.Rooms[targetRoomIdx];
+
+            if (!CheckEnterRoom(targetRoom, enemy)) 
                 continue;
 
-            var entryPos = RoomPos[target];
+            var entryPos = RoomPos[targetRoomIdx];
             var (start, end) = (Math.Min(hallIdx, entryPos), Math.Max(hallIdx, entryPos));
+            
             var isClear = true;
             for (var i = start; i <= end; i++)
             {
@@ -174,29 +138,74 @@ public static class Program
                 isClear = false;
                 break;
             }
+            if (!isClear) 
+                continue;
 
-            if (!isClear) continue;
-                
-            var steps = Math.Abs(hallIdx - entryPos);
-            var enterSteps = state.RoomDepth - state.Rooms[target].Length;
-            var moveCost = (steps + enterSteps) * EnergyCost[enemy];
+            var stepsInHall = Math.Abs(hallIdx - entryPos);
+            var stepsInRoom = state.RoomDepth - targetRoom.Length;
+            var moveCost = (stepsInHall + stepsInRoom) * EnergyCost[enemy];
 
             var hall = new StringBuilder(state.Hallway) { [hallIdx] = '.' };
             var rooms = state.Rooms.ToList();
-            rooms[target] = state.Rooms[target] + enemy;
+            rooms[targetRoomIdx] += enemy;
 
             yield return (new State(hall.ToString(), rooms, state.RoomDepth), moveCost);
         }
+        
+        for (var roomIdx = 0; roomIdx < 4; roomIdx++)
+        {
+            var room = state.Rooms[roomIdx];
+            if (room.Length == 0) continue;
+
+            var type = GetType(roomIdx);
+            if (room.All(c => c == type)) continue;
+
+            var enemy = room.Last();
+            var entryPos = RoomPos[roomIdx];
+
+            foreach (var hallPos in ValidHallwayStops)
+            {
+                var (start, end) = (Math.Min(entryPos, hallPos), Math.Max(entryPos, hallPos));
+                var isClear = true;
+                for (var i = start; i <= end; i++)
+                {
+                    if (state.Hallway[i] == '.') 
+                        continue;
+                    isClear = false;
+                    break;
+                }
+                if (!isClear) continue;
+
+                var stepsInRoom = state.RoomDepth - room.Length + 1;
+                var stepsInHall = Math.Abs(hallPos - entryPos);
+                var moveCost = (stepsInRoom + stepsInHall) * EnergyCost[enemy];
+
+                var hall = new StringBuilder(state.Hallway) { [hallPos] = enemy };
+                var rooms = state.Rooms.ToList();
+                rooms[roomIdx] = room[..^1];
+
+                yield return (new State(hall.ToString(), rooms, state.RoomDepth), moveCost);
+            }
+        }
     }
+    
+    private static bool CheckEnterRoom(string room, char enemyType) 
+        => room.All(c => c == enemyType);
+
+    private static char GetType(int idx) => Enemies[idx];
 }
 
 internal record State(string Hallway, IReadOnlyList<string> Rooms, int RoomDepth)
 {
+    private const string Enemies = "ABCD";
     public bool IsFinal()
     {
         for (var i = 0; i < 4; i++)
-            if (Rooms[i].Length != RoomDepth || Rooms[i].Any(c => c != "ABCD"[i]))
+        {
+            var type = Enemies[i];
+            if (Rooms[i].Length != RoomDepth || Rooms[i].Any(c => c != type))
                 return false;
+        }
         return true;
     }
 }
