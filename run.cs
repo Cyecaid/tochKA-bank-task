@@ -32,18 +32,12 @@ public class Program
 
     private static readonly Dictionary<char, int> EnergyCost = new()
     {
-        { 'A', 1 },
-        { 'B', 10 },
-        { 'C', 100 },
-        { 'D', 1000 }
+        { 'A', 1 }, { 'B', 10 }, { 'C', 100 }, { 'D', 1000 }
     };
 
     private static readonly Dictionary<char, int> TargetIdx = new()
     {
-        { 'A', 0 },
-        { 'B', 1 },
-        { 'C', 2 },
-        { 'D', 3 }
+        { 'A', 0 }, { 'B', 1 }, { 'C', 2 }, { 'D', 3 }
     };
 
     private static readonly int[] RoomPos = { 2, 4, 6, 8 };
@@ -104,19 +98,16 @@ public class Program
         
         for (var hallPos = 0; hallPos < hall.Length; hallPos++)
         {
-            if (hall[hallPos] == ' ') 
-                continue;
+            if (hall[hallPos] == ' ') continue;
 
             var obj = hall[hallPos];
             var targetRoomIdx = TargetIdx[obj];
             
-            if (!CanEnterRoom(rooms[targetRoomIdx], obj)) 
-                continue;
+            if (!CanEnterRoom(rooms[targetRoomIdx], obj)) continue;
 
             var targetPos = RoomPos[targetRoomIdx];
             
-            if (!IsHallPathClear(hall, hallPos, targetPos)) 
-                continue;
+            if (!IsHallPathClear(hall, hallPos, targetPos)) continue;
             
             var hallSteps = Math.Abs(hallPos - targetPos);
             var roomSteps = roomDepth - rooms[targetRoomIdx].Count;
@@ -132,10 +123,7 @@ public class Program
         
         for (var roomIdx = 0; roomIdx < 4; roomIdx++)
         {
-            if (rooms[roomIdx].Count == 0) continue;
-
-            if (rooms[roomIdx].All(obj => obj == EnemyTypes[roomIdx])) 
-                continue;
+            if (rooms[roomIdx].Count == 0 || rooms[roomIdx].All(obj => obj == EnemyTypes[roomIdx])) continue;
 
             var obj = rooms[roomIdx].Last();
             var roomPos = RoomPos[roomIdx];
@@ -166,11 +154,8 @@ public class Program
         for (var pos = 0; pos < hall.Length; pos++)
         {
             var obj = hall[pos];
-            if (obj == ' ') 
-                continue;
-            var targetPos = RoomPos[TargetIdx[obj]];
-            var dist = Math.Abs(pos - targetPos);
-            total += dist * EnergyCost[obj];
+            if (obj == ' ') continue;
+            total += Math.Abs(pos - RoomPos[TargetIdx[obj]]) * EnergyCost[obj];
         }
 
         for (var roomIdx = 0; roomIdx < rooms.Count; roomIdx++)
@@ -179,15 +164,12 @@ public class Program
             for (var i = 0; i < room.Count; i++)
             {
                 var obj = room[i];
-                if (obj == EnemyTypes[roomIdx]) 
-                    continue;
-                var targetPos = RoomPos[TargetIdx[obj]];
-                var dist = Math.Abs(RoomPos[roomIdx] - targetPos);
+                if (obj == EnemyTypes[roomIdx]) continue;
+                var dist = Math.Abs(RoomPos[roomIdx] - RoomPos[TargetIdx[obj]]);
                 var stepsOut = room.Count - i; 
                 total += (stepsOut + dist) * EnergyCost[obj];
             }
         }
-        
         return total;
     }
 
@@ -218,11 +200,10 @@ public class Program
                 var newCost = curCost + moveCost;
                 var newState = StateToRecord(newHall, newRooms);
 
-                if (newCost >= visited.GetValueOrDefault(newState, int.MaxValue)) 
-                    continue;
+                if (newCost >= visited.GetValueOrDefault(newState, int.MaxValue)) continue;
+                
                 visited[newState] = newCost;
                 var priority = newCost + Heuristic(newHall, newRooms);
-                
                 pq.Enqueue((newHall, newRooms, newCost), (priority, counter++));
             }
         }
@@ -235,7 +216,7 @@ public class Program
         var lines = new List<string>();
         string line;
 
-        while ((line = Console.ReadLine()) != null) 
+        while ((line = Console.ReadLine()) != null && line.Length > 0)
             lines.Add(line);
 
         var result = Solve(lines);
