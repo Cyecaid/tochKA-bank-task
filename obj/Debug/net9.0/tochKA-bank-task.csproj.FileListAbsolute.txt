@@ -12,3 +12,4 @@ C:\tochKA-bank-task\obj\Debug\net9.0\refint\tochKA-bank-task.dll
 C:\tochKA-bank-task\obj\Debug\net9.0\tochKA-bank-task.pdb
 C:\tochKA-bank-task\obj\Debug\net9.0\tochKA-bank-task.genruntimeconfig.cache
 C:\tochKA-bank-task\obj\Debug\net9.0\ref\tochKA-bank-task.dll
+C:\tochKA-bank-task\obj\Debug\net9.0\tochKA-bank-task.sourcelink.json

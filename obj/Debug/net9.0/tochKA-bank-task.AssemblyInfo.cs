@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("tochKA-bank-task")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+775390e3a3161b2f7a48105b16d7f5a6288c2c74")]
 [assembly: System.Reflection.AssemblyProductAttribute("tochKA-bank-task")]
 [assembly: System.Reflection.AssemblyTitleAttribute("tochKA-bank-task")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,7 +1,7 @@
-using System.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace run;
 
@@ -97,14 +97,11 @@ public static class Program
         for (var i = 0; i < 4; i++)
         {
             var room = state.Rooms[i];
-            if (room.All(c => c == "ABCD"[i])) 
-                continue;
-
             for (var depth = 0; depth < room.Length; depth++)
             {
                 var enemy = room[depth];
-                if (RoomsIdx[enemy] == i) continue;
-
+                if (RoomsIdx[enemy] == i && room.Skip(depth).All(c => RoomsIdx[c] == i))
+                    continue;
                 var stepsToExit = depth + 1;
                 var target = RoomPos[RoomsIdx[enemy]];
                 var dist = stepsToExit + Math.Abs(RoomPos[i] - target) + 1;
@@ -119,7 +116,6 @@ public static class Program
         for (var roomIdx = 0; roomIdx < 4; roomIdx++)
         {
             if (state.Rooms[roomIdx].Length == 0) continue;
-                
             if (state.Rooms[roomIdx].All(c => c == "ABCD"[roomIdx])) 
                 continue;
                 
@@ -142,7 +138,7 @@ public static class Program
                     
                 var stepsToExit = state.RoomDepth - state.Rooms[roomIdx].Length + 1;
                 var steps = Math.Abs(hallPos - entryPos);
-                var moveCost = stepsToExit + steps * EnergyCost[enemy];
+                var moveCost = (stepsToExit + steps) * EnergyCost[enemy];
                         
                 var hall = new StringBuilder(state.Hallway) { [hallPos] = enemy };
                 var rooms = state.Rooms.ToList();
@@ -151,7 +147,7 @@ public static class Program
                 yield return (new State(hall.ToString(), rooms, state.RoomDepth), moveCost);
             }
         }
-            
+        
         for (var hallIdx = 0; hallIdx < state.Hallway.Length; hallIdx++)
         {
             var enemy = state.Hallway[hallIdx];
@@ -159,12 +155,10 @@ public static class Program
                 continue;
 
             var target = RoomsIdx[enemy];
-                
             if (state.Rooms[target].Any(c => c != "ABCD"[target])) 
                 continue;
 
             var entryPos = RoomPos[target];
-                
             var (start, end) = (Math.Min(hallIdx, entryPos), Math.Max(hallIdx, entryPos));
             var isClear = true;
             for (var i = start; i <= end; i++)
@@ -179,7 +173,7 @@ public static class Program
                 
             var steps = Math.Abs(hallIdx - entryPos);
             var enterSteps = state.RoomDepth - state.Rooms[target].Length;
-            var moveCost = steps + enterSteps * EnergyCost[enemy];
+            var moveCost = (steps + enterSteps) * EnergyCost[enemy];
 
             var hall = new StringBuilder(state.Hallway) { [hallIdx] = '.' };
             var rooms = state.Rooms.ToList();
@@ -192,7 +186,6 @@ public static class Program
 
 internal record State(string Hallway, IReadOnlyList<string> Rooms, int RoomDepth)
 {
-
     public bool IsFinal()
     {
         if (Hallway.Any(c => c != '.'))
