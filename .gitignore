@@ -1,0 +1,14 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Rider IDE
+.idea/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+
+# Mac
+.DS_Store
