@@ -15,8 +15,8 @@ class Program
         { 'A', 0 }, { 'B', 1 }, { 'C', 2 }, { 'D', 3 }
     };
 
-    private static readonly List<int> RoomPos = new() { 2, 4, 6, 8 };
-    private static readonly List<int> ValidHallwayStops = new() { 0, 1, 3, 5, 7, 9, 10 };
+    private static readonly List<int> RoomPos = [2, 4, 6, 8];
+    private static readonly List<int> ValidHallwayStops = [0, 1, 3, 5, 7, 9, 10];
     private const string Enemies = "ABCD";
     
     static int Solve(List<string> lines)
@@ -55,9 +55,10 @@ class Program
             {
                 var newCost = curCost + moveCost;
 
-                if (visited.ContainsKey(nextState) && newCost >= visited[nextState]) 
+                if (visited.TryGetValue(nextState, out var value) && newCost >= value) 
                     continue;
-                visited[nextState] = newCost;
+                value = newCost;
+                visited[nextState] = value;
                 priorityQueue.Enqueue((nextState, newCost), newCost + CalculateHeuristic(nextState));
             }
         }
@@ -108,7 +109,7 @@ class Program
 
             var entryPos = RoomPos[targetRoomIdx];
             var (start, end) = (Math.Min(hallIdx, entryPos), Math.Max(hallIdx, entryPos));
-
+            
             var isClear = true;
             for (var i = start; i <= end; i++)
             {
@@ -147,7 +148,7 @@ class Program
                 var isClear = true;
                 for (var i = start; i <= end; i++)
                 {
-                    if (state.Hallway[i] == '.') 
+                    if (i == entryPos || state.Hallway[i] == '.') 
                         continue;
                     isClear = false;
                     break;
@@ -177,9 +178,7 @@ class Program
         string line;
 
         while ((line = Console.ReadLine()) != null)
-        {
             lines.Add(line);
-        }
 
         var result = Solve(lines);
         Console.WriteLine(result);
